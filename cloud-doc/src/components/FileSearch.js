@@ -14,6 +14,7 @@ const FileSearch = ({ title, onFileSearch }) => {
   const closeSearch = () => {
     setInputActive(false);
     setValue("");
+    onFileSearch("");
   };
 
   useEffect(() => {
@@ -24,7 +25,7 @@ const FileSearch = ({ title, onFileSearch }) => {
     if (escPressed && inputActive) {
       closeSearch();
     }
-  });
+  }, [enterPressed, escPressed]);
 
   useEffect(() => {
     if (inputActive) {
@@ -34,19 +35,7 @@ const FileSearch = ({ title, onFileSearch }) => {
 
   return (
     <div className="alert alert-primary mb-0 rounded-0 d-flex justify-content-between align-items-center">
-      {!inputActive && (
-        <>
-          <span style={{ lineHeight: "38px" }}>{title}</span>
-          <button
-            type="button"
-            className="icon-button"
-            onClick={() => setInputActive(true)}
-          >
-            <FontAwesomeIcon title="搜索" size="lg" icon={faSearch} />
-          </button>
-        </>
-      )}
-      {inputActive && (
+      {inputActive ? (
         <>
           <input
             className="form-control"
@@ -56,6 +45,17 @@ const FileSearch = ({ title, onFileSearch }) => {
           />
           <button type="button" className="icon-button" onClick={closeSearch}>
             <FontAwesomeIcon title="关闭" size="lg" icon={faClose} />
+          </button>
+        </>
+      ) : (
+        <>
+          <span style={{ lineHeight: "38px" }}>{title}</span>
+          <button
+            type="button"
+            className="icon-button"
+            onClick={() => setInputActive(true)}
+          >
+            <FontAwesomeIcon title="搜索" size="lg" icon={faSearch} />
           </button>
         </>
       )}
