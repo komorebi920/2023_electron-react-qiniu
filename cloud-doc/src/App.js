@@ -7,22 +7,21 @@ import FileList from "./components/FileList";
 import BottomBtn from "./components/BottomBtn";
 import TabList from "./components/TabList";
 import defaultFiles from "./utils/defaultFiles";
+import { flattenArr, objToArr } from "./utils/helper";
 import "./App.css";
 import "bootstrap/dist/css/bootstrap.min.css";
 import "easymde/dist/easymde.min.css";
 
 function App() {
-  const [files, setFiles] = useState(defaultFiles);
+  const [files, setFiles] = useState(flattenArr(defaultFiles));
   const [activeFileId, setActiveFileId] = useState("");
   const [openedFileIds, setOpenedFileIds] = useState([]);
   const [unsavedFileIds, setUnsavedFileIds] = useState([]);
   const [searchedFiles, setSearchFiles] = useState([]);
 
-  const openedFiles = openedFileIds.map((openedFileId) =>
-    files.find((file) => file.id === openedFileId)
-  );
+  const openedFiles = openedFileIds.map((id) => files[id]);
 
-  const activeFile = files.find((file) => file.id === activeFileId);
+  const activeFile = files[activeFileId];
 
   const tabClick = (id) => {
     // set current active file
@@ -55,16 +54,8 @@ function App() {
   };
 
   const fileChange = (id, value) => {
-    // loop through file array to update to new value
-    const newFiles = files.map((file) => {
-      if (file.id === id) {
-        file.body = value;
-      }
-
-      return file;
-    });
-
-    setFiles(newFiles);
+    const newFile = { ...files[id], body: value };
+    setFiles({ ...files, [id]: newFile });
 
     // update unsavedIds
     if (!unsavedFileIds.includes(id)) {
@@ -74,49 +65,39 @@ function App() {
 
   const deleteFile = (id) => {
     // filter out the current file id
-    const newFiles = files.filter((file) => file.id !== id);
-    setFiles(newFiles);
+    delete files[id];
+    setFiles(files);
 
     // close the tab if opened
     tabClose(id);
   };
 
   const updateFileName = (id, title) => {
-    // loop throgh file, and update the title
-    const newFiles = files.map((file) => {
-      if (file.id === id) {
-        file.title = title;
-        file.isNew = false;
-      }
-
-      return file;
-    });
-
-    setFiles(newFiles);
+    const modifiedFile = { ...files[id], title, isNew: false };
+    setFiles({ ...files, [id]: modifiedFile });
   };
-
-  const fileSearch = (keyword) => {
-    // filter out the new files based on the keywork
-    const newFiles = files.filter((file) => file.title.includes(keyword));
-    setSearchFiles(newFiles);
-  };
-
-  const fileListArr = searchedFiles.length > 0 ? searchedFiles : files;
 
   const createNewFile = () => {
     const newId = uuid_v4();
-    const newFiles = [
-      ...files,
-      {
-        id: newId,
-        title: "",
-        body: "## 请输入 Markdown",
-        createAt: new Date().getTime(),
-        isNew: true,
-      },
-    ];
-    setFiles(newFiles);
+    const newFile = {
+      id: newId,
+      title: "",
+      body: "## 请输入 Markdown",
+      createAt: new Date().getTime(),
+      isNew: true,
+    };
+    setFiles({ ...files, [newId]: newFile });
   };
+
+  const filesArr = objToArr(files);
+
+  const fileSearch = (keyword) => {
+    // filter out the new files based on the keyword
+    const newFiles = filesArr.filter((file) => file.title.includes(keyword));
+    setSearchFiles(newFiles);
+  };
+
+  const fileListArr = searchedFiles.length > 0 ? searchedFiles : filesArr;
 
   return (
     <div className="App container-fluid px-0">

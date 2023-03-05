@@ -27,7 +27,8 @@ const FileList = ({ files, onFileClick, onSaveEdit, onFileDelete }) => {
 
       if (enterPressed && value.trim() !== "") {
         onSaveEdit(editItem.id, value);
-        closeEdit(editItem);
+        setEditStatus(false);
+        setValue("");
       }
 
       if (escPressed) {
