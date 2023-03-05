@@ -10,20 +10,33 @@ import FileSearch from "./components/FileSearch";
 import FileList from "./components/FileList";
 import BottomBtn from "./components/BottomBtn";
 import TabList from "./components/TabList";
-import defaultFiles from "./utils/defaultFiles";
 import { flattenArr, objToArr } from "./utils/helper";
 import fileHelper from "./utils/fileHelper";
 import "./App.css";
 import "bootstrap/dist/css/bootstrap.min.css";
 import "easymde/dist/easymde.min.css";
 
-// import node.js modules
+// require node.js modules
 const { join } = window.require("path");
 const { remote } = window.require("electron");
-const saveLocation = join(remote.app.getPath("exe"), "../..");
+const Store = window.require("electron-store");
+
+const saveLocation = join(remote.app.getPath("appData"), "cloud-doc");
+const fileStore = new Store({ name: "Files Data" });
+
+const saveFilesToStore = (files) => {
+  // wo don't have to save any info in file system, eg: isNew, body, etc
+  const filesStoreObj = objToArr(files).reduce((result, file) => {
+    const { id, path, title, createAt } = file;
+    result[id] = { id, path, title, createAt };
+    return result;
+  }, {});
+
+  fileStore.set("files", filesStoreObj);
+};
 
 function App() {
-  const [files, setFiles] = useState(flattenArr(defaultFiles));
+  const [files, setFiles] = useState(fileStore.get("files") || {});
   const [activeFileId, setActiveFileId] = useState("");
   const [openedFileIds, setOpenedFileIds] = useState([]);
   const [unsavedFileIds, setUnsavedFileIds] = useState([]);
@@ -41,6 +54,15 @@ function App() {
   const fileClick = (id) => {
     // set current active file
     tabClick(id);
+
+    if (!files[id].isLoaded) {
+      fileHelper.readFile(join(saveLocation, files[id].path)).then((value) =>
+        setFiles({
+          ...files,
+          [id]: { ...files[id], body: value, isLoaded: true },
+        })
+      );
+    }
 
     // if openedFiles don't have the current Id
     // then add new fileId to openedFiles
@@ -74,48 +96,45 @@ function App() {
   };
 
   const deleteFile = (id) => {
-    const targetFile = files[id].title;
+    const { [id]: value, ...afterDeleteFiles } = files;
 
-    return new Promise((resolve) => {
-      if (targetFile) {
-        resolve(fileHelper.deleteFile(join(saveLocation, `${targetFile}.md`)));
-      } else {
-        resolve();
-      }
-    }).then(() => {
-      // filter out the current file id
-      delete files[id];
-      setFiles(files);
+    if (files[id].isNew) {
+      setFiles(afterDeleteFiles);
+    } else {
+      fileHelper
+        .deleteFile(join(saveLocation, `${files[id].title}.md`))
+        .then(() => {
+          setFiles(afterDeleteFiles);
+          saveFilesToStore(afterDeleteFiles);
 
-      // close the tab if opened
-      tabClose(id);
-    });
+          // close the tab if opened
+          tabClose(id);
+        });
+    }
   };
 
   const updateFileName = (id, title, isNew) => {
-    const modifiedFile = { ...files[id], title, isNew: false };
+    const oldPath = `${files[id].title}.md`;
+    const newPath = `${title}.md`;
+    const modifiedFile = { ...files[id], title, isNew: false, path: newPath };
+    const newFiles = { ...files, [id]: modifiedFile };
 
     return new Promise((resolve) => {
       if (isNew) {
-        const targetFile = title;
         resolve(
-          fileHelper.writeFile(
-            join(saveLocation, `${targetFile}.md`),
-            modifiedFile.body
-          )
+          fileHelper.writeFile(join(saveLocation, newPath), modifiedFile.body)
         );
       } else {
-        const oldFile = files[id].title;
-        const newFile = title;
         resolve(
           fileHelper.renameFile(
-            join(saveLocation, `${oldFile}.md`),
-            join(saveLocation, `${newFile}.md`)
+            join(saveLocation, oldPath),
+            join(saveLocation, newPath)
           )
         );
       }
     }).then(() => {
-      setFiles({ ...files, [id]: modifiedFile });
+      setFiles(newFiles);
+      saveFilesToStore(newFiles);
     });
   };
 
@@ -138,11 +157,16 @@ function App() {
   };
 
   const saveCurrentFile = () => {
-    fileHelper
-      .writeFile(join(saveLocation, `${activeFile.title}.md`), activeFile.body)
-      .then(() =>
-        setUnsavedFileIds(unsavedFileIds.filter((id) => id !== activeFile.id))
-      );
+    if (activeFile) {
+      fileHelper
+        .writeFile(
+          join(saveLocation, `${activeFile.title}.md`),
+          activeFile.body
+        )
+        .then(() =>
+          setUnsavedFileIds(unsavedFileIds.filter((id) => id !== activeFile.id))
+        );
+    }
   };
 
   return (

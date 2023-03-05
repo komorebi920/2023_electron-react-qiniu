@@ -4,6 +4,7 @@ import { faEdit, faTrash, faClose } from "@fortawesome/free-solid-svg-icons";
 import { faMarkdown } from "@fortawesome/free-brands-svg-icons";
 import PropTypes from "prop-types";
 import useKeyPress from "../hooks/useKeyPress";
+import classNames from "classnames";
 
 const FileList = ({ files, onFileClick, onSaveEdit, onFileDelete }) => {
   const [editStatus, setEditStatus] = useState(false);
@@ -25,7 +26,11 @@ const FileList = ({ files, onFileClick, onSaveEdit, onFileDelete }) => {
     if (editStatus) {
       const editItem = files.find((file) => file.id === editStatus);
 
-      if (enterPressed && value.trim() !== "") {
+      if (
+        enterPressed &&
+        value.trim() !== "" &&
+        !files.find((file) => file.title === value)
+      ) {
         onSaveEdit(editItem.id, value, editItem.isNew);
         setEditStatus(false);
         setValue("");
@@ -86,10 +91,15 @@ const FileList = ({ files, onFileClick, onSaveEdit, onFileDelete }) => {
           {(file.id === editStatus || file.isNew) && (
             <>
               <input
-                className="form-control col-10"
+                className={classNames({
+                  "form-control": true,
+                  "col-10": true,
+                  "is-invalid": !!files.find((file) => file.title === value),
+                })}
                 value={value}
                 onChange={(e) => setValue(e.target.value)}
                 placeholder="请输入文件名称"
+                required
               />
               <button
                 type="button"
