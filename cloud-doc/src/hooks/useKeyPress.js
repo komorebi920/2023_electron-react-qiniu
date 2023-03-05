@@ -5,7 +5,7 @@ const useKeyPress = (targetKeyCode) => {
 
   const keyDownHandler = (evt) => {
     const { keyCode } = evt;
-console.log('down')
+
     if (keyCode === targetKeyCode) {
       setKeyPressed(true);
     }
@@ -13,7 +13,7 @@ console.log('down')
 
   const keyUpHandler = (evt) => {
     const { keyCode } = evt;
-    console.log('down')
+
     if (keyCode === targetKeyCode) {
       setKeyPressed(false);
     }

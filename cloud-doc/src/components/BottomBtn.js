@@ -18,7 +18,7 @@ const BottomBtn = ({ text, colorClass, icon, onClick }) => {
 BottomBtn.propTypes = {
   text: PropTypes.string,
   colorClass: PropTypes.string,
-  icon: PropTypes.element.isRequired,
+  icon: PropTypes.object.isRequired,
   onClick: PropTypes.func,
 };
 

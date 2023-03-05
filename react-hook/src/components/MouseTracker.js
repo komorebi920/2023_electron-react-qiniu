@@ -5,15 +5,12 @@ const MouseTracker = () => {
 
   useEffect(() => {
     const updateMouse = (evt) => {
-      console.log(2, "updateMouse");
       setPositions({ x: evt.clientX, y: evt.clientY });
     };
 
-    console.log(1, "addListener");
     document.addEventListener("click", updateMouse);
 
     return () => {
-      console.log(3, "removeListener");
       document.removeEventListener("click", updateMouse);
     };
   });
