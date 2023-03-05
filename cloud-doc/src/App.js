@@ -1,5 +1,9 @@
 import React, { useState } from "react";
-import { faPlus, faFileImport } from "@fortawesome/free-solid-svg-icons";
+import {
+  faPlus,
+  faFileImport,
+  faSave,
+} from "@fortawesome/free-solid-svg-icons";
 import SimpleMDE from "react-simplemde-editor";
 import { v4 as uuid_v4 } from "uuid";
 import FileSearch from "./components/FileSearch";
@@ -8,9 +12,15 @@ import BottomBtn from "./components/BottomBtn";
 import TabList from "./components/TabList";
 import defaultFiles from "./utils/defaultFiles";
 import { flattenArr, objToArr } from "./utils/helper";
+import fileHelper from "./utils/fileHelper";
 import "./App.css";
 import "bootstrap/dist/css/bootstrap.min.css";
 import "easymde/dist/easymde.min.css";
+
+// import node.js modules
+const { join } = window.require("path");
+const { remote } = window.require("electron");
+const saveLocation = join(remote.app.getPath("exe"), "../..");
 
 function App() {
   const [files, setFiles] = useState(flattenArr(defaultFiles));
@@ -18,9 +28,9 @@ function App() {
   const [openedFileIds, setOpenedFileIds] = useState([]);
   const [unsavedFileIds, setUnsavedFileIds] = useState([]);
   const [searchedFiles, setSearchFiles] = useState([]);
-
+  const filesArr = objToArr(files);
+  const fileListArr = searchedFiles.length > 0 ? searchedFiles : filesArr;
   const openedFiles = openedFileIds.map((id) => files[id]);
-
   const activeFile = files[activeFileId];
 
   const tabClick = (id) => {
@@ -64,17 +74,49 @@ function App() {
   };
 
   const deleteFile = (id) => {
-    // filter out the current file id
-    delete files[id];
-    setFiles(files);
+    const targetFile = files[id].title;
 
-    // close the tab if opened
-    tabClose(id);
+    return new Promise((resolve) => {
+      if (targetFile) {
+        resolve(fileHelper.deleteFile(join(saveLocation, `${targetFile}.md`)));
+      } else {
+        resolve();
+      }
+    }).then(() => {
+      // filter out the current file id
+      delete files[id];
+      setFiles(files);
+
+      // close the tab if opened
+      tabClose(id);
+    });
   };
 
-  const updateFileName = (id, title) => {
+  const updateFileName = (id, title, isNew) => {
     const modifiedFile = { ...files[id], title, isNew: false };
-    setFiles({ ...files, [id]: modifiedFile });
+
+    return new Promise((resolve) => {
+      if (isNew) {
+        const targetFile = title;
+        resolve(
+          fileHelper.writeFile(
+            join(saveLocation, `${targetFile}.md`),
+            modifiedFile.body
+          )
+        );
+      } else {
+        const oldFile = files[id].title;
+        const newFile = title;
+        resolve(
+          fileHelper.renameFile(
+            join(saveLocation, `${oldFile}.md`),
+            join(saveLocation, `${newFile}.md`)
+          )
+        );
+      }
+    }).then(() => {
+      setFiles({ ...files, [id]: modifiedFile });
+    });
   };
 
   const createNewFile = () => {
@@ -89,15 +131,19 @@ function App() {
     setFiles({ ...files, [newId]: newFile });
   };
 
-  const filesArr = objToArr(files);
-
   const fileSearch = (keyword) => {
     // filter out the new files based on the keyword
     const newFiles = filesArr.filter((file) => file.title.includes(keyword));
     setSearchFiles(newFiles);
   };
 
-  const fileListArr = searchedFiles.length > 0 ? searchedFiles : filesArr;
+  const saveCurrentFile = () => {
+    fileHelper
+      .writeFile(join(saveLocation, `${activeFile.title}.md`), activeFile.body)
+      .then(() =>
+        setUnsavedFileIds(unsavedFileIds.filter((id) => id !== activeFile.id))
+      );
+  };
 
   return (
     <div className="App container-fluid px-0">
@@ -117,6 +163,14 @@ function App() {
                 colorClass="btn-primary"
                 icon={faPlus}
                 onClick={createNewFile}
+              />
+            </div>
+            <div className="col">
+              <BottomBtn
+                text="保存"
+                colorClass="btn-danger"
+                icon={faSave}
+                onClick={saveCurrentFile}
               />
             </div>
             <div className="col">
