@@ -14,4 +14,7 @@ app.on("ready", () => {
 
   const urlLocation = isDev ? `http://localhost:3000` : "dummyurl";
   mainWindow.loadURL(urlLocation);
+
+  // Open the DevTools.
+  mainWindow.webContents.openDevTools();
 });
