@@ -10,7 +10,7 @@ import FileSearch from "./components/FileSearch";
 import FileList from "./components/FileList";
 import BottomBtn from "./components/BottomBtn";
 import TabList from "./components/TabList";
-import { flattenArr, objToArr } from "./utils/helper";
+import { objToArr } from "./utils/helper";
 import fileHelper from "./utils/fileHelper";
 import "./App.css";
 import "bootstrap/dist/css/bootstrap.min.css";
@@ -21,7 +21,7 @@ const { join } = window.require("path");
 const { remote } = window.require("electron");
 const Store = window.require("electron-store");
 
-const saveLocation = join(remote.app.getPath("appData"), "cloud-doc");
+const saveLocation = join(remote.app.getPath("appData"), "electron-cloud-doc");
 const fileStore = new Store({ name: "Files Data" });
 
 const saveFilesToStore = (files) => {
