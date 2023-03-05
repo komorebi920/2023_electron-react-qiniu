@@ -1,36 +1,30 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faEdit, faTrash, faClose } from "@fortawesome/free-solid-svg-icons";
 import { faMarkdown } from "@fortawesome/free-brands-svg-icons";
 import PropTypes from "prop-types";
+import useKeyPress from "../hooks/useKeyPress";
 
 const FileList = ({ files, onFileClick, onSaveEdit, onFileDelete }) => {
   const [editStatus, setEditStatus] = useState(false);
   const [value, setValue] = useState("");
+  const enterPressed = useKeyPress(13);
+  const escPressed = useKeyPress(27);
 
-  const closeEdit = (evt) => {
-    evt.preventDefault();
-
+  const closeEdit = () => {
     setEditStatus(false);
     setValue("");
   };
 
   useEffect(() => {
-    const handleInputEvent = (evt) => {
-      const { keyCode } = evt;
+    if (enterPressed && editStatus) {
+      onSaveEdit(editStatus, value);
+      closeEdit();
+    }
 
-      if (keyCode === 13 && editStatus) {
-        const item = files.find((file) => file.id === editStatus);
-        onSaveEdit(item.id, value);
-        closeEdit(evt);
-      } else if (keyCode === 27 && editStatus) {
-        closeEdit(evt);
-      }
-    };
-
-    document.addEventListener("keyup", handleInputEvent);
-
-    return () => document.removeEventListener("keyup", handleInputEvent);
+    if (escPressed && editStatus) {
+      closeEdit();
+    }
   });
 
   return (
