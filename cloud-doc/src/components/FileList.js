@@ -11,21 +11,39 @@ const FileList = ({ files, onFileClick, onSaveEdit, onFileDelete }) => {
   const enterPressed = useKeyPress(13);
   const escPressed = useKeyPress(27);
 
-  const closeEdit = () => {
+  const closeEdit = (editItem) => {
     setEditStatus(false);
     setValue("");
+
+    // if we are editing a newly created file, wo shoule delete this file when pressing esc
+    if (editItem.isNew) {
+      onFileDelete(editItem.id);
+    }
   };
 
   useEffect(() => {
-    if (enterPressed && editStatus) {
-      onSaveEdit(editStatus, value);
-      closeEdit();
-    }
+    if (editStatus) {
+      const editItem = files.find((file) => file.id === editStatus);
 
-    if (escPressed && editStatus) {
-      closeEdit();
+      if (enterPressed && value.trim() !== "") {
+        onSaveEdit(editItem.id, value);
+        closeEdit(editItem);
+      }
+
+      if (escPressed) {
+        closeEdit(editItem);
+      }
     }
   });
+
+  useEffect(() => {
+    const newFile = files.find((file) => file.isNew);
+
+    if (newFile) {
+      setEditStatus(newFile.id);
+      setValue(newFile.title);
+    }
+  }, [files]);
 
   return (
     <ul className="list-group list-group-flush fileList">
@@ -34,7 +52,7 @@ const FileList = ({ files, onFileClick, onSaveEdit, onFileDelete }) => {
           className="list-group-item bg-light row d-flex align-items-center file-item mx-0"
           key={file.id}
         >
-          {file.id !== editStatus && (
+          {file.id !== editStatus && !file.isNew && (
             <>
               <span className="col-2">
                 <FontAwesomeIcon size="lg" icon={faMarkdown} />
@@ -64,17 +82,18 @@ const FileList = ({ files, onFileClick, onSaveEdit, onFileDelete }) => {
               </button>
             </>
           )}
-          {file.id === editStatus && (
+          {(file.id === editStatus || file.isNew) && (
             <>
               <input
                 className="form-control col-10"
                 value={value}
                 onChange={(e) => setValue(e.target.value)}
+                placeholder="请输入文件名称"
               />
               <button
                 type="button"
                 className="icon-button col-2"
-                onClick={closeEdit}
+                onClick={() => closeEdit(file)}
               >
                 <FontAwesomeIcon title="关闭" size="lg" icon={faClose} />
               </button>
