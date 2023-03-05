@@ -3,7 +3,7 @@ import PropTypes from "prop-types";
 import classNames from "classnames";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faTimes } from "@fortawesome/free-solid-svg-icons";
-import "./TabList.scss";
+import "./TabList.css";
 
 const TabList = ({ files, activeId, unsaveIds, onTabClick, onCloseTab }) => {
   return (
