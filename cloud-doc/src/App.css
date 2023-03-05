@@ -7,3 +7,7 @@
 .c-link {
   cursor: pointer;
 }
+
+.editor-toolbar {
+  border-radius: 0 !important;
+}

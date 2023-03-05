@@ -16,6 +16,7 @@ const TabList = ({ files, activeId, unsaveIds, onTabClick, onCloseTab }) => {
             <a
               href="#"
               className={classNames({
+                "rounded-0": true,
                 "nav-link": true,
                 active: file.id === activeId,
                 withUnsaved: withUnsavedMark,
